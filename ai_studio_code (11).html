@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA / Android Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TubePro Premium</title>
+    
+    <style>
+        :root {
+            --primary: #ff2d55;
+            --bg: #000000;
+            --surface: #121212;
+            --surface-light: #1c1c1e;
+            --text-main: #ffffff;
+            --text-dim: #a1a1a6;
+            --accent-gradient: linear-gradient(145deg, #ff2d55 0%, #ff512f 100%);
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- 1. PREMIUM SPLASH SCREEN (ELIMINATION) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .app-logo-frame {
+            width: 110px;
+            height: 110px;
+            background: var(--accent-gradient);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px rgba(255, 45, 85, 0.4);
+            animation: logo-entrance 1.2s ease-out forwards;
+        }
+
+        @keyframes logo-entrance {
+            0% { transform: scale(0.5); opacity: 0; filter: blur(10px); }
+            100% { transform: scale(1); opacity: 1; filter: blur(0); }
+        }
+
+        .loading-bar-container {
+            width: 120px;
+            height: 3px;
+            background: #222;
+            border-radius: 10px;
+            margin-top: 40px;
+            overflow: hidden;
+        }
+
+        .loading-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            animation: progress 2.5s ease-in-out forwards;
+        }
+
+        @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* --- 2. MAIN APP CONTENT --- */
+        #app-wrapper {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: all 0.6s ease-out;
+            padding-top: var(--safe-top);
+        }
+
+        .app-ready { opacity: 1 !important; transform: scale(1) !important; }
+
+        /* Header */
+        header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo-text span { color: var(--primary); }
+
+        /* Search Area */
+        .container {
+            padding: 0 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 100px;
+        }
+
+        .search-card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #2c2c2e;
+            display: flex;
+            align-items: center;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 15px;
+            font-size: 16px;
+        }
+
+        .paste-btn {
+            background: var(--surface-light);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Action Button */
+        .main-btn {
+            width: 100%;
+            background: var(--accent-gradient);
+            height: 60px;
+            border-radius: 20px;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 8px 25px rgba(255, 45, 85, 0.3);
+            margin-bottom: 30px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .main-btn:active { transform: scale(0.97); }
+
+        /* Result Card */
+        #result-box {
+            display: none;
+            background: var(--surface);
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid #2c2c2e;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .thumb-img { width: 100%; height: 200px; object-fit: cover; }
+        .res-info { padding: 20px; }
+        .dl-item {
+            background: var(--surface-light);
+            margin-top: 10px;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* --- 3. BOTTOM NAV --- */
+        nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: calc(70px + var(--safe-bottom));
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding-bottom: var(--safe-bottom);
+            border-top: 1px solid #222;
+            z-index: 100;
+        }
+
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 500;
+            gap: 4px;
+        }
+
+        .nav-link.active { color: var(--primary); }
+        .nav-link svg { width: 24px; height: 24px; fill: currentColor; }
+
+        /* --- 4. INSTALL PAGE --- */
+        #install-screen {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .big-app-icon {
+            width: 120px; height: 120px;
+            background: var(--accent-gradient);
+            border-radius: 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 50px rgba(255, 45, 85, 0.4);
+        }
+
+        /* Loading UI */
+        .spinner {
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #toast {
+            position: fixed;
+            bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 12px 25px;
+            border-radius: 30px; font-size: 14px; opacity: 0; transition: 0.3s;
+            z-index: 99999;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="app-logo-frame">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="white">
+                <path d="M10 15.5l6-3.5-6-3.5v7zM19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+            </svg>
+        </div>
+        <div class="loading-bar-container">
+            <div class="loading-bar-fill"></div>
+        </div>
+        <p style="margin-top: 20px; font-size: 12px; color: #555; letter-spacing: 2px;">SECURE BOOT</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-wrapper">
+        
+        <!-- Home Screen -->
+        <div id="home-screen" class="container">
+            <header>
+                <div class="logo-text">Tube<span>Pro</span></div>
+                <div style="background: #333; font-size: 10px; padding: 4px 12px; border-radius: 20px; font-weight: 700;">PREMIUM</div>
+            </header>
+
+            <div class="search-card">
+                <input type="text" id="url-input" placeholder="Paste link here...">
+                <button class="paste-btn" onclick="doPaste()">PASTE</button>
+            </div>
+
+            <button class="main-btn" onclick="fetchMedia()">
+                <span id="btn-txt">GENERATE LINKS</span>
+                <div id="btn-load" class="spinner"></div>
+            </button>
+
+            <!-- Result -->
+            <div id="result-box">
+                <img id="vid-thumb" class="thumb-img" src="" alt="">
+                <div class="res-info">
+                    <h3 id="vid-title" style="margin-bottom: 15px; font-size: 17px;">Video Title</h3>
+                    <div id="download-links"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Install Screen -->
+        <div id="install-screen">
+            <div class="big-app-icon">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="white">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                </svg>
+            </div>
+            <h1 style="font-size: 24px; margin-bottom: 10px;">Install TubePro</h1>
+            <p style="color: var(--text-dim); margin-bottom: 40px;">Add TubePro Premium to your home screen for a full-screen, native experience.</p>
+            <button class="main-btn" onclick="installApp()">INSTALL TO ANDROID</button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav>
+            <div class="nav-link active" onclick="switchTab('home')" id="nav-home">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Home</span>
+            </div>
+            <div class="nav-link" onclick="switchTab('install')" id="nav-install">
+                <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                <span>Install</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="toast">Toast Message</div>
+
+    <script>
+        const API_KEY = '90bfa2b57fmsh2fe4c43945ce012p1255b3jsnf099f32e30df'; 
+        const API_HOST = 'youtube-media-downloader.p.rapidapi.com';
+        let deferredPrompt;
+
+        // 1. App Startup Sequence
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                const app = document.getElementById('app-wrapper');
+                
+                splash.style.transform = 'translateY(-100%)';
+                app.classList.add('app-ready');
+            }, 2500);
+        });
+
+        // 2. Navigation
+        function switchTab(tab) {
+            const h = document.getElementById('home-screen');
+            const i = document.getElementById('install-screen');
+            const nh = document.getElementById('nav-home');
+            const ni = document.getElementById('nav-install');
+
+            if(tab === 'home') {
+                h.style.display = 'block';
+                i.style.display = 'none';
+                nh.classList.add('active');
+                ni.classList.remove('active');
+            } else {
+                h.style.display = 'none';
+                i.style.display = 'flex';
+                nh.classList.remove('active');
+                ni.classList.add('active');
+            }
+        }
+
+        // 3. UI Helpers
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
+        }
+
+        async function doPaste() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('url-input').value = text;
+            } catch (e) {
+                showToast("Paste manually");
+            }
+        }
+
+        // 4. Download Logic
+        async function fetchMedia() {
+            const input = document.getElementById('url-input').value;
+            const btnTxt = document.getElementById('btn-txt');
+            const loader = document.getElementById('btn-load');
+            const resultBox = document.getElementById('result-box');
+
+            if(!input.includes('youtu')) {
+                showToast("Invalid URL");
+                return;
+            }
+
+            // UI State Loading
+            btnTxt.style.display = 'none';
+            loader.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            const videoId = input.split('v=')[1]?.split('&')[0] || input.split('/').pop();
+            const url = `https://${API_HOST}/v2/video/details?videoId=${videoId}`;
+
+            try {
+                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {
+                    headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': API_HOST }
+                });
+                const data = await res.json();
+
+                // Render
+                document.getElementById('vid-thumb').src = data.thumbnails[data.thumbnails.length-1].url;
+                document.getElementById('vid-title').innerText = data.title;
+                
+                const linkArea = document.getElementById('download-links');
+                linkArea.innerHTML = '';
+
+                // Video
+                data.videos.items.slice(0, 3).forEach(v => {
+                    linkArea.innerHTML += `<a href="${v.url}" class="dl-item" target="_blank">
+                        <span>Video ${v.quality}</span>
+                        <span style="color:var(--text-dim)">${v.extension}</span>
+                    </a>`;
+                });
+
+                // Audio
+                data.audios.items.slice(0, 1).forEach(a => {
+                    linkArea.innerHTML += `<a href="${a.url}" class="dl-item" style="border-left-color: #00ff88" target="_blank">
+                        <span>MP3 Audio</span>
+                        <span style="color:var(--text-dim)">Best Quality</span>
+                    </a>`;
+                });
+
+                resultBox.style.display = 'block';
+            } catch (err) {
+                showToast("Connection Error");
+            } finally {
+                btnTxt.style.display = 'block';
+                loader.style.display = 'none';
+            }
+        }
+
+        // 5. PWA Install Logic
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') showToast("Installing...");
+                deferredPrompt = null;
+            } else {
+                showToast("Open in Chrome to Install");
+            }
+        }
+    </script>
+</body>
+</html>
