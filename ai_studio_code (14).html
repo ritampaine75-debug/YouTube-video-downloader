@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZenTask Premium</title>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text: #1e293b;
+            --accent: #a5b4fc;
+            --glass: rgba(255, 255, 255, 0.7);
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --text: #f1f5f9;
+            --glass: rgba(15, 23, 42, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* --- SPLASH SCREEN --- */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .splash-logo {
+            font-size: 4rem;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .splash-text {
+            color: white;
+            margin-top: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeIn 1s forwards 0.5s;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .hide-splash { transform: translateY(-100%); }
+
+        /* --- MAIN LAYOUT --- */
+        .app-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            animation: slideDown 0.6s ease;
+        }
+
+        .user-greeting h1 { margin: 0; font-size: 1.5rem; }
+        .user-greeting p { margin: 0; opacity: 0.6; font-size: 0.9rem; }
+
+        .settings-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        /* --- TO DO LIST --- */
+        .task-input-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            border-radius: 16px;
+            border: none;
+            background: var(--card-bg);
+            color: var(--text);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            font-size: 1rem;
+            outline: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .add-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .add-btn:active { transform: translateY(-50%) scale(0.9); }
+
+        .task-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            scrollbar-width: none;
+        }
+
+        .task-item {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.4s ease forwards;
+            backdrop-filter: blur(10px);
+            border-left: 4px solid var(--primary);
+        }
+
+        .task-item.completed {
+            opacity: 0.5;
+            border-left-color: #10b981;
+        }
+
+        .task-item.completed span { text-decoration: line-through; }
+
+        .checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .checkbox i { font-size: 0.7rem; color: white; display: none; }
+        .completed .checkbox { background: #10b981; border-color: #10b981; }
+        .completed .checkbox i { display: block; }
+
+        /* --- SETTINGS PANEL --- */
+        .settings-panel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            background: var(--bg);
+            z-index: 500;
+            border-radius: 30px 30px 0 0;
+            padding: 30px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+
+        .settings-panel.active { bottom: 0; }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .btn-install {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            margin-top: 30px;
+            cursor: pointer;
+            display: none; /* Only show if installable */
+        }
+
+        /* --- HIDDEN LIST --- */
+        #hidden-section {
+            display: none;
+            margin-top: 20px;
+            border-top: 2px dashed var(--accent);
+            padding-top: 20px;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            z-index: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash">
+        <i class="fas fa-check-double splash-logo"></i>
+        <div class="splash-text">ZENTASK PREMIUM</div>
+    </div>
+
+    <div class="app-container">
+        <header>
+            <div class="user-greeting">
+                <p id="current-date"></p>
+                <h1>Hola, Master</h1>
+            </div>
+            <div class="settings-btn" onclick="toggleSettings()">
+                <i class="fas fa-cog"></i>
+            </div>
+        </header>
+
+        <div class="task-input-container">
+            <input type="text" id="taskInput" placeholder="Write a new task...">
+            <button class="add-btn" onclick="addTask()"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <div class="task-list" id="taskList">
+            <!-- Tasks appear here -->
+        </div>
+
+        <!-- Hidden Vault Section -->
+        <div id="hidden-section">
+            <h3 style="font-size: 0.9rem; opacity: 0.5; margin-bottom: 15px;">🔒 SECRET VAULT</h3>
+            <div id="hiddenTaskList"></div>
+        </div>
+    </div>
+
+    <!-- Settings Menu -->
+    <div class="overlay" id="overlay" onclick="toggleSettings()"></div>
+    <div class="settings-panel" id="settingsPanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2 style="margin:0">Settings</h2>
+            <i class="fas fa-times" onclick="toggleSettings()" style="cursor:pointer"></i>
+        </div>
+
+        <div class="setting-item">
+            <span>Dark Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <span>Hidden Vault</span>
+            <label class="switch">
+                <input type="checkbox" id="hiddenToggle" onchange="toggleHiddenVault()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <button class="btn-install" id="installBtn">
+            <i class="fas fa-download"></i> DOWNLOAD APP
+        </button>
+        
+        <p style="text-align: center; font-size: 0.8rem; opacity: 0.4; margin-top: 40px;">ZenTask v1.0.0 Premium</p>
+    </div>
+
+    <script>
+        // --- Initialization & Splash ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
+
+            setTimeout(() => {
+                document.getElementById('splash').classList.add('hide-splash');
+            }, 2500);
+
+            renderTasks();
+        });
+
+        // --- PWA Install Logic ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') deferredPrompt = null;
+            }
+        });
+
+        // --- Core Logic ---
+        let tasks = JSON.parse(localStorage.getItem('zenTasks')) || [];
+        let vaultEnabled = localStorage.getItem('vaultEnabled') === 'true';
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            if (!input.value.trim()) return;
+
+            const newTask = {
+                id: Date.now(),
+                text: input.value,
+                completed: false,
+                hidden: false
+            };
+
+            // If user adds a task starting with "secret:", it goes to vault automatically
+            if (input.value.toLowerCase().startsWith('secret:')) {
+                newTask.text = input.value.replace('secret:', '').trim();
+                newTask.hidden = true;
+            }
+
+            tasks.push(newTask);
+            save();
+            input.value = '';
+            renderTasks();
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t);
+            save();
+            renderTasks();
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+            document.getElementById('overlay').style.display = 
+                document.getElementById('settingsPanel').classList.contains('active') ? 'block' : 'none';
+        }
+
+        function toggleTheme() {
+            const isDark = document.getElementById('themeToggle').checked;
+            document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function toggleHiddenVault() {
+            vaultEnabled = document.getElementById('hiddenToggle').checked;
+            localStorage.setItem('vaultEnabled', vaultEnabled);
+            document.getElementById('hidden-section').style.display = vaultEnabled ? 'block' : 'none';
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            const hiddenList = document.getElementById('hiddenTaskList');
+            list.innerHTML = '';
+            hiddenList.innerHTML = '';
+
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = `task-item ${task.completed ? 'completed' : ''}`;
+                item.innerHTML = `
+                    <div class="checkbox" onclick="toggleTask(${task.id})"><i class="fas fa-check"></i></div>
+                    <span>${task.text}</span>
+                `;
+
+                if (task.hidden) {
+                    if (vaultEnabled) hiddenList.appendChild(item);
+                } else {
+                    list.appendChild(item);
+                }
+            });
+        }
+
+        function save() {
+            localStorage.setItem('zenTasks', JSON.stringify(tasks));
+        }
+
+        // Load theme preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.getElementById('themeToggle').checked = true;
+            toggleTheme();
+        }
+        
+        // Load vault preference
+        if (vaultEnabled) {
+            document.getElementById('hiddenToggle').checked = true;
+            toggleHiddenVault();
+        }
+    </script>
+</body>
+</html>
