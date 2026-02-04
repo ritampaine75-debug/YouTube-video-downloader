@@ -3,62 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple PWA App</title>
-    <!-- Link to the manifest file -->
+    <title>App Checker</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
         #installBtn { 
-            display: none; /* Hidden by default */
-            background: #007bff; color: white; border: none; padding: 10px 20px; 
-            border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 20px;
+            display: none; /* Only shows when browser is ready */
+            padding: 15px 30px; font-size: 18px; 
+            background: #28a745; color: white; border: none; 
+            border-radius: 8px; cursor: pointer; 
         }
-        #installBtn:hover { background: #0056b3; }
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <h1>App Checker</h1>
-        <p>This is a simple HTML app. Click below to install it on your device.</p>
-        <button id="installBtn">Install App Directly</button>
-    </div>
+    <h1>App Checker</h1>
+    <p>If the button below is hidden, your browser is still checking requirements.</p>
+    
+    <button id="installBtn">Install App Directly</button>
 
     <script>
         let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
+        const btn = document.getElementById('installBtn');
 
-        // 1. Listen for the 'beforeinstallprompt' event
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent Chrome from showing the tiny "mini-infobar"
+            console.log('Success: App is installable!');
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             deferredPrompt = e;
-            // Update UI to notify the user they can install the PWA
-            installBtn.style.display = 'block';
+            btn.style.display = 'inline-block'; // Show the button
         });
 
-        // 2. Click handler for the install button
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            
-            // Show the browser's install prompt
-            deferredPrompt.prompt();
-            
-            // Wait for the user to respond to the prompt
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response to install: ${outcome}`);
-            
-            // We've used the prompt, and can't use it again, throw it away
-            deferredPrompt = null;
-            installBtn.style.display = 'none';
+        btn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+                btn.style.display = 'none';
+            }
         });
 
-        // 3. Register Service Worker (Required for PWA)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log("Service Worker Registered"));
+            navigator.serviceWorker.register('sw.js');
         }
     </script>
 </body>
