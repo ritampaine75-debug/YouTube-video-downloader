@@ -1,20 +1,11 @@
 {
-  "name": "App Checker",
-  "short_name": "Checker",
-  "start_url": "/",
+  "name": "ZenTask Premium",
+  "short_name": "ZenTask",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "background_color": "#6366f1",
+  "theme_color": "#6366f1",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "https://cdn-icons-png.flaticon.com/512/1160/1160515.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
