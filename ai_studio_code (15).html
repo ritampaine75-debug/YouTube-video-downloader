@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Android Calculator</title>
+    
+    <!-- PWA Manifest as a Data URI (All in one block) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Premium Calc","short_name":"Calc","start_url":".","display":"standalone","background_color":"#121212","theme_color":"#121212","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/564/564429.png","sizes":"512x512","type":"image/png"}]}'>
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface: #1e1e1e;
+            --primary: #bb86fc;
+            --secondary: #03dac6;
+            --text: #ffffff;
+            --error: #cf6679;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg-color);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Loading Animation --- */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(187, 134, 252, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- Premium UI Components --- */
+        header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* Calculator Display */
+        .display-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            text-align: right;
+            overflow: hidden;
+        }
+        #equation {
+            font-size: 1.5rem;
+            color: #888;
+            margin-bottom: 10px;
+            min-height: 1.5em;
+            word-wrap: break-word;
+        }
+        #result {
+            font-size: 4rem;
+            font-weight: 300;
+            transition: all 0.2s;
+        }
+
+        /* Buttons Grid */
+        .keypad {
+            background: var(--surface);
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            animation: slideUp 0.6s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        button {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: none;
+            background: #2c2c2c;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:active { transform: scale(0.9); background: #444; }
+        .op { color: var(--secondary); background: #333; }
+        .equals { background: var(--primary); color: #000; }
+        .special { color: var(--error); }
+
+        /* --- History Panel --- */
+        #history-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        #history-panel.open { transform: translateX(0); }
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Install Popup --- */
+        #install-popup {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(200%);
+            background: var(--primary);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #install-popup.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Main Website -->
+    <header>
+        <span onclick="toggleHistory()" style="font-size: 1.5rem; cursor: pointer;">🕒</span>
+        <h2 style="margin:0; font-weight: 300; letter-spacing: 2px;">CALCULATOR</h2>
+        <span id="pwa-status">● Online</span>
+    </header>
+
+    <div class="display-container">
+        <div id="equation"></div>
+        <div id="result">0</div>
+    </div>
+
+    <div class="keypad">
+        <button class="special" onclick="clearDisplay()">AC</button>
+        <button class="op" onclick="append('(')">(</button>
+        <button class="op" onclick="append(')')">)</button>
+        <button class="op" onclick="append('/')">÷</button>
+        
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button class="op" onclick="append('*')">×</button>
+        
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button class="op" onclick="append('-')">-</button>
+        
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button class="op" onclick="append('+')">+</button>
+        
+        <button onclick="append('0')">0</button>
+        <button onclick="append('.')">.</button>
+        <button onclick="backspace()">⌫</button>
+        <button class="equals" onclick="calculate()">=</button>
+    </div>
+
+    <!-- History View -->
+    <div id="history-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="color: var(--primary);">History</h2>
+            <button onclick="toggleHistory()" style="background:transparent; border:none; color:white; font-size: 2rem;">×</button>
+        </div>
+        <div id="history-list" style="flex:1; overflow-y:auto; padding-bottom: 20px;"></div>
+        <button onclick="clearHistory()" style="width:100%; border-radius: 10px; padding: 15px; background: var(--error); color: white;">Delete History</button>
+    </div>
+
+    <!-- Download App UI -->
+    <div id="install-popup" onclick="installApp()">
+        <span>📲 Download Android App</span>
+    </div>
+
+    <script>
+        // --- Loader Logic ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+            }, 1000);
+            renderHistory();
+        });
+
+        // --- Calculator Logic ---
+        let currentInput = '';
+        const eqDiv = document.getElementById('equation');
+        const resDiv = document.getElementById('result');
+
+        function append(val) {
+            currentInput += val;
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '';
+            eqDiv.innerText = '';
+            resDiv.innerText = '0';
+        }
+
+        function backspace() {
+            currentInput = currentInput.slice(0, -1);
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            resDiv.innerText = currentInput || '0';
+        }
+
+        function calculate() {
+            try {
+                const result = eval(currentInput.replace('÷', '/').replace('×', '*'));
+                const entry = `${currentInput} = ${result}`;
+                saveHistory(entry);
+                eqDiv.innerText = currentInput;
+                resDiv.innerText = result;
+                currentInput = result.toString();
+            } catch (e) {
+                resDiv.innerText = 'Error';
+                setTimeout(clearDisplay, 1000);
+            }
+        }
+
+        // --- History Functions ---
+        function toggleHistory() {
+            document.getElementById('history-panel').classList.toggle('open');
+        }
+
+        function saveHistory(item) {
+            let history = JSON.parse(localStorage.getItem('calc_history') || '[]');
+            history.unshift(item);
+            localStorage.setItem('calc_history', JSON.stringify(history.slice(0, 50)));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            const history = JSON.parse(localStorage.getItem('calc_history') || '[]');
+            list.innerHTML = history.length ? history.map(h => `<div class="history-item">${h}</div>`).join('') : '<p style="text-align:center; color:#555;">No history yet</p>';
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('calc_history');
+            renderHistory();
+        }
+
+        // --- PWA / Download App Logic ---
+        let deferredPrompt;
+        const installPopup = document.getElementById('install-popup');
+
+        // Check if running as standalone (in app mode)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (!isStandalone) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                // Show popup automatically on opening
+                setTimeout(() => {
+                    installPopup.classList.add('show');
+                }, 2000);
+            });
+        }
+
+        async function installApp() {
+            if (!deferredPrompt) return;
+            installPopup.classList.remove('show');
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+        }
+
+        // --- Swipe Animations & Scroll Effects ---
+        let touchStart = 0;
+        document.addEventListener('touchstart', e => touchStart = e.changedTouches[0].screenY);
+        document.addEventListener('touchend', e => {
+            const touchEnd = e.changedTouches[0].screenY;
+            // Swipe down to close history if open
+            if (touchEnd - touchStart > 100 && document.getElementById('history-panel').classList.contains('open')) {
+                toggleHistory();
+            }
+        });
+    </script>
+</body>
+</html>
